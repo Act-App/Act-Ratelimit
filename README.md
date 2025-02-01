@@ -32,8 +32,9 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 
-from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter
+from fastapi_ratelimit import FastAPILimiter
+from fastapi_ratelimit.depends import RateLimiter
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -42,7 +43,9 @@ async def lifespan(_: FastAPI):
     yield
     await FastAPILimiter.close()
 
+
 app = FastAPI(lifespan=lifespan)
+
 
 @app.get("/", dependencies=[Depends(RateLimiter(times=2, seconds=5))])
 async def index():

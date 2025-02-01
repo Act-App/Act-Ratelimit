@@ -2,10 +2,13 @@ from contextlib import asynccontextmanager
 
 import redis.asyncio as redis
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, WebSocket
-
-from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter, WebSocketRateLimiter
+from fastapi import Depends
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import WebSocket
+from fastapi_ratelimit import FastAPILimiter
+from fastapi_ratelimit.depends import RateLimiter
+from fastapi_ratelimit.depends import WebSocketRateLimiter
 
 
 @asynccontextmanager
