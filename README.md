@@ -191,5 +191,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
 ## License
 
-This project is licensed under the
-[Apache-2.0](https://github.com/long2ice/fastapi-limiter/blob/master/LICENCE) License.
+This fork contains modifications by [`Act-App`](https://github.com/Act-App) licensed under [MIT License](https://github.com/Act-App/Act-Ratelimit/blob/master/LICENCE).
+The original project remains under the [Apache-2.0](https://github.com/Act-App/Act-Ratelimit/blob/master/ORIGINAL_LICENCE) License.
