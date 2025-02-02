@@ -40,7 +40,6 @@ package = "act_ratelimit"
 directory = "changes"
 filename = "CHANGELOG.md"
 issue_format = "[#{issue}](https://github.com/the-godz/Service-Bot/issues/{issue})"
-template = "changes/.template.md.jinja"
 underlines = [2, 3]
 type = [
     { name = "Breaking Changes",            directory = "breaking",      showcontent = true },
