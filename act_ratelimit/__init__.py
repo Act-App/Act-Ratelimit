@@ -17,7 +17,7 @@ from act_ratelimit.constants import IDENTIFIER_SIGNATURE
 from act_ratelimit.constants import WS_CALLBACK_SIGNATURE
 from act_ratelimit.constants import RateLimitStrategy
 
-__all__: tuple[str, ...] = ("FastAPILimiter",)
+__all__: tuple[str, ...] = ("ACTRatelimit",)
 
 
 async def default_identifier(request: Request | WebSocket) -> str:
@@ -47,7 +47,7 @@ async def ws_default_callback(ws: WebSocket, pexpire: int):
     raise HTTPException(HTTP_429_TOO_MANY_REQUESTS, "Too Many Requests", headers={"Retry-After": str(expire)})
 
 
-class FastAPILimiter:
+class ACTRatelimit:
     __slots__ = ()
 
     backend: BaseBackend | None = None

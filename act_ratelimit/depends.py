@@ -3,7 +3,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket
 
-from act_ratelimit import FastAPILimiter
+from act_ratelimit import ACTRatelimit
 from act_ratelimit.constants import HTTP_CALLBACK_SIGNATURE
 from act_ratelimit.constants import IDENTIFIER_SIGNATURE
 from act_ratelimit.constants import WS_CALLBACK_SIGNATURE
@@ -48,21 +48,21 @@ class RateLimiter:
                         break
 
     async def __call__(self, request: Request, response: Response):
-        assert FastAPILimiter.backend is not None, "You must call FastAPILimiter.init in startup event of fastapi!"
+        assert ACTRatelimit.backend is not None, "You must call FastAPILimiter.init in startup event of fastapi!"
         if self.milliseconds == 0:
             return
 
         self._set_indexes(request)
 
         # moved here because constructor run before app startup
-        identifier = self.identifier or FastAPILimiter.identifier
-        strategy = self.strategy or FastAPILimiter.strategy
+        identifier = self.identifier or ACTRatelimit.identifier
+        strategy = self.strategy or ACTRatelimit.strategy
         rate_key = await identifier(request)
-        key = f"{FastAPILimiter.prefix}:{rate_key}:{self.route_index}:{self.dep_index}"
+        key = f"{ACTRatelimit.prefix}:{rate_key}:{self.route_index}:{self.dep_index}"
         print(key)
-        pexpire = await FastAPILimiter.backend.check(key, self.times, self.milliseconds, strategy)
+        pexpire = await ACTRatelimit.backend.check(key, self.times, self.milliseconds, strategy)
         if pexpire != 0:
-            callback = self.callback or FastAPILimiter.http_callback
+            callback = self.callback or ACTRatelimit.http_callback
             return await callback(request, response, pexpire)
 
 
@@ -88,14 +88,14 @@ class WebSocketRateLimiter:
         self.strategy = strategy
 
     async def __call__(self, ws: WebSocket, context_key: str = ""):
-        assert FastAPILimiter.backend is not None, "You must call FastAPILimiter.init in startup event of fastapi!"
+        assert ACTRatelimit.backend is not None, "You must call FastAPILimiter.init in startup event of fastapi!"
         if self.milliseconds == 0:
             return
-        identifier = self.identifier or FastAPILimiter.identifier
-        strategy = self.strategy or FastAPILimiter.strategy
+        identifier = self.identifier or ACTRatelimit.identifier
+        strategy = self.strategy or ACTRatelimit.strategy
         rate_key = await identifier(ws)
-        key = f"{FastAPILimiter.prefix}:ws:{rate_key}:{context_key}"
-        pexpire = await FastAPILimiter.backend.check(key, self.times, self.milliseconds, strategy)
+        key = f"{ACTRatelimit.prefix}:ws:{rate_key}:{context_key}"
+        pexpire = await ACTRatelimit.backend.check(key, self.times, self.milliseconds, strategy)
         if pexpire != 0:
-            callback = self.callback or FastAPILimiter.ws_callback
+            callback = self.callback or ACTRatelimit.ws_callback
             return await callback(ws, pexpire)

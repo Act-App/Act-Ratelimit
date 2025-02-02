@@ -31,6 +31,7 @@ class BaseBackend(abc.ABC):
 
     @abc.abstractmethod
     async def close(self) -> None:
+        """Close the connection to the backend."""
         raise NotImplementedError
 
 
@@ -102,10 +103,8 @@ class ValkeyBackend(BaseBackend):
     def __init__(
         self,
         valkey: Valkey,
-        prefix: str = "fastapi-limiter",
     ):
         self.valkey: Valkey = valkey
-        self.prefix: str = prefix
         self.lua_sha_fixed: str | None = None
         self.lua_sha_sliding: str | None = None
         self.lua_sha_fixed_elastic: str | None = None
@@ -199,10 +198,8 @@ class RedisBackend(BaseBackend):
     def __init__(
         self,
         redis: aioredis.Redis[bytes],
-        prefix: str = "fastapi-limiter",
     ):
         self.redis: aioredis.Redis[bytes] = redis
-        self.prefix: str = prefix
         self.lua_sha_fixed: str | None = None
         self.lua_sha_sliding: str | None = None
         self.lua_sha_fixed_elastic: str | None = None

@@ -1,47 +1,57 @@
 # Act-Ratelimit
 
-[![pypi](https://img.shields.io/pypi/v/fastapi-limiter.svg?style=flat)](https://pypi.python.org/pypi/fastapi-limiter)
-[![license](https://img.shields.io/github/license/long2ice/fastapi-limiter)](https://github.com/long2ice/fastapi-limiter/blob/master/LICENCE)
-[![workflows](https://github.com/long2ice/fastapi-limiter/workflows/pypi/badge.svg)](https://github.com/long2ice/fastapi-limiter/actions?query=workflow:pypi)
-[![workflows](https://github.com/long2ice/fastapi-limiter/workflows/ci/badge.svg)](https://github.com/long2ice/fastapi-limiter/actions?query=workflow:ci)
+[![pypi](https://img.shields.io/pypi/v/act-ratelimit.svg?style=flat)](https://pypi.python.org/pypi/fastapi-limiter)
+[![license](https://img.shields.io/github/license/Act-App/Act-Ratelimit)](https://github.com/Act-App/Act-Ratelimit/blob/master/LICENCE)
 
 ## Introduction
 
-FastAPI-Limiter is a rate limiting tool for [fastapi](https://github.com/tiangolo/fastapi) routes with lua script.
+Act-Ratelimit is a rate limiting tool for [fastapi](https://github.com/tiangolo/fastapi).<br>
+It is a fork of [fastapi-limiter](https://github.com/long2ice/fastapi-limiter) with support for multiple Datastores and different Ratelimit strategies.
 
 ## Requirements
 
-- [redis](https://redis.io/)
+- [fastapi](https://github.com/tiangolo/fastapi)
+
+## Additional Requirements
+- [redis](https://github.com/redis/redis-py) if you want to use the redis-backend
+- [valkey](https://github.com/valkey-io/valkey-py) if you want to use the valkey-backend
 
 ## Install
 
 Just install from pypi
 
 ```shell script
-> pip install fastapi-limiter
+pip install act-ratelimit
+```
+
+You can also install the additional requirements
+
+```shell script
+pip install act-ratelimit[redis]
+pip install act-ratelimit[valkey]
 ```
 
 ## Quick Start
 
-FastAPI-Limiter is simple to use, which just provide a dependency `RateLimiter`, the following example allow `2` times
-request per `5` seconds in route `/`.
+Act-Ratelimit is simple to use, you need to initialize it with your preferred backend and then use the `RateLimiter` dependency in your routes.
 
 ```py
 import redis.asyncio as redis
-import uvicorn
 from contextlib import asynccontextmanager
-from fastapi import Depends, FastAPI
 
-from fastapi_ratelimit import FastAPILimiter
-from fastapi_ratelimit.depends import RateLimiter
+from act_ratelimit import ACTRatelimit
+from act_ratelimit.depends import RateLimiter
+from act_ratelimit.backends import RedisBackend
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    redis_connection = redis.from_url("redis://localhost:6379", encoding="utf8")
-    await FastAPILimiter.init(redis_connection)
+    redis_backend = RedisBackend(
+        redis.from_url("redis://localhost:6379", encoding="utf8"), prefix="act-ratelimit-example"
+    )
+    await ACTRatelimit.init(redis_backend)
     yield
-    await FastAPILimiter.close()
+    await ACTRatelimit.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -50,25 +60,63 @@ app = FastAPI(lifespan=lifespan)
 @app.get("/", dependencies=[Depends(RateLimiter(times=2, seconds=5))])
 async def index():
     return {"msg": "Hello World"}
-
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", debug=True, reload=True)
 ```
+
+> [!NOTE]
+> For people coming from fastapi-limiter, the `FastAPILimiter.init` method has changed. It now takes a backend instance instead of a redis instance.
 
 ## Usage
 
-There are some config in `FastAPILimiter.init`.
+You will first need to initialize the `ACTRatelimit` with a [`backend`](#backend) instance.
 
-### redis
+Other possible parameters are:
+- [`identifier`](#identifier) - The identifier of the rate limit, default is `ip`.
+- [`callback`](#callback) - The callback when the rate limit is exceeded.
+- [`strategy`](#strategies) - The strategy to use for the rate limit, default is `FIXED_WINDOW`.
 
-The `redis` instance of `aioredis`.
 
-### prefix
 
-Prefix of redis key.
 
-### identifier
+### Backend
+
+There are currently two backends pre-implemented, `RedisBackend` and `ValkeyBackend`.
+
+`RedisBackend` uses the `redis` library to interact with a redis instance.<br>
+`ValkeyBackend` uses the `valkey` library to interact with a valkey instance.
+
+You can also implement your own backend by inheriting from the `BaseBackend` class.
+
+```py
+from act_ratelimit.backends import BaseBackend
+from act_ratelimit.constants import RateLimitStrategy
+
+class MyBackend(BaseBackend):
+    
+    async def check(self, key: str, times: int, limit: int, strategy: RateLimitStrategy) -> int:
+        """Check if a key has hit the rate limit.
+    
+        This method should return the time in milliseconds until the rate limit resets.
+        If the rate limit has not been hit, it should return 0.
+    
+        Args:
+            key: The key to check.
+            times: The number of times the key has to be hit to trigger the rate limit.
+            limit: How long the rate limit should last in milliseconds.
+        """
+        raise NotImplementedError
+
+    async def close(self) -> None:
+        """Close the connection to the backend."""
+        raise NotImplementedError
+```
+### Strategies
+
+There are currently three strategies available, `FIXED_WINDOW`, `SLIDING_WINDOW` and `FIXED_WINDOW_ELASTIC`.
+
+> [!NOTE]
+> These Strategies need to be implemented in the backend. If you are using a custom backend, you will need to implement these strategies.
+
+### Identifier
 
 Identifier of route limit, default is `ip`, you can override it such as `userid` and so on.
 
@@ -80,7 +128,7 @@ async def default_identifier(request: Request):
     return request.client.host + ":" + request.scope["path"]
 ```
 
-### callback
+### Callback
 
 Callback when access is forbidden, default is raise `HTTPException` with `429` status code.
 
@@ -93,10 +141,9 @@ async def default_callback(request: Request, response: Response, pexpire: int):
     :param response:
     :return:
     """
-    expire = ceil(pexpire / 1000)
 
     raise HTTPException(
-        HTTP_429_TOO_MANY_REQUESTS, "Too Many Requests", headers={"Retry-After": str(expire)}
+        HTTP_429_TOO_MANY_REQUESTS, "Too Many Requests", headers={"Retry-After": str(pexpire)}
     )
 ```
 
@@ -140,29 +187,6 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_text(f"Hello, world")
         except WebSocketRateLimitException:  # Thrown when rate limit exceeded.
             await websocket.send_text(f"Hello again")
-```
-
-## Lua script
-
-The lua script used.
-
-```lua
-local key = KEYS[1]
-local limit = tonumber(ARGV[1])
-local expire_time = ARGV[2]
-
-local current = tonumber(redis.call('get', key) or "0")
-if current > 0 then
-    if current + 1 > limit then
-        return redis.call("PTTL", key)
-    else
-        redis.call("INCR", key)
-        return 0
-    end
-else
-    redis.call("SET", key, 1, "px", expire_time)
-    return 0
-end
 ```
 
 ## License
