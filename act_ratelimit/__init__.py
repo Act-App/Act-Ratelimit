@@ -19,7 +19,6 @@
 # SOFTWARE.
 """A simple rate limiter for FastAPI."""
 
-__version__ = "0.1a0"
 
 
 from math import ceil
@@ -103,3 +102,7 @@ class ACTRatelimit:
     @classmethod
     async def close(cls) -> None:
         await cls.backend.close()
+
+
+
+__version__ = "0.0.1a0"
