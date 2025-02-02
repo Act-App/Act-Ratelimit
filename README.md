@@ -1,7 +1,7 @@
 # Act-Ratelimit
 
 [![pypi](https://img.shields.io/pypi/v/act-ratelimit.svg?style=flat)](https://pypi.python.org/pypi/fastapi-limiter)
-[![license](https://img.shields.io/github/license/Act-App/Act-Ratelimit)](https://github.com/Act-App/Act-Ratelimit/blob/master/LICENCE)
+[![license](https://img.shields.io/github/license/Act-App/Act-Ratelimit)](https://github.com/Act-App/Act-Ratelimit/blob/master/LICENSE)
 
 ## Introduction
 
@@ -191,5 +191,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
 ## License
 
-This fork contains modifications by [`Act-App`](https://github.com/Act-App) licensed under [MIT License](https://github.com/Act-App/Act-Ratelimit/blob/master/LICENCE).
-The original project remains under the [Apache-2.0](https://github.com/Act-App/Act-Ratelimit/blob/master/ORIGINAL_LICENCE) License.
+This fork contains modifications by [`Act-App`](https://github.com/Act-App) licensed under [MIT License](https://github.com/Act-App/Act-Ratelimit/blob/master/LICENSE).
+The original project remains under the [Apache-2.0](https://github.com/Act-App/Act-Ratelimit/blob/master/ORIGINAL_LICENSE) License.
