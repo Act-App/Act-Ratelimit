@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - "dependabot/**"
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    if: ${{ !(github.event_name == 'pull_request' && github.event.action == 'synchronize') }}
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run format checks
+        run: |
+          pip install nox
+          nox -s format_check
+
+  type-check:
+    if: ${{ !(github.event_name == 'pull_request' && github.event.action == 'synchronize') }}
+    name: Type-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run pyright
+        run: |
+          pip install nox
+          nox -s typecheck
