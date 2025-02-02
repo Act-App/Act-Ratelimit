@@ -4,9 +4,6 @@ __version__ = "0.1"
 
 
 from math import ceil
-from typing import Any
-from typing import Awaitable
-from typing import Callable
 
 from fastapi import HTTPException
 from starlette.requests import Request
@@ -15,16 +12,17 @@ from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 from starlette.websockets import WebSocket
 
 from act_ratelimit.backends import BaseBackend
+from act_ratelimit.constants import HTTP_CALLBACK_SIGNATURE
+from act_ratelimit.constants import IDENTIFIER_SIGNATURE
+from act_ratelimit.constants import WS_CALLBACK_SIGNATURE
+from act_ratelimit.constants import RateLimitStrategy
 
-IDENTIFIER_SIGNATURE = Callable[[Request | WebSocket], Awaitable[str]]
+__all__: tuple[str, ...] = ("FastAPILimiter",)
 
 
 async def default_identifier(request: Request | WebSocket) -> str:
     ip = forwarded.split(",")[0] if (forwarded := request.headers.get("X-Forwarded-For")) else request.client.host
     return ip + ":" + request.scope["path"]
-
-
-HTTP_CALLBACK_SIGNATURE = Callable[[Request, Response, int], Awaitable[Any]]
 
 
 async def http_default_callback(request: Request, response: Response, pexpire: int):
@@ -35,11 +33,7 @@ async def http_default_callback(request: Request, response: Response, pexpire: i
     :param response:
     :return:
     """
-    expire = ceil(pexpire / 1000)
-    raise HTTPException(HTTP_429_TOO_MANY_REQUESTS, "Too Many Requests", headers={"Retry-After": str(expire)})
-
-
-WS_CALLBACK_SIGNATURE = Callable[[WebSocket, int], Awaitable[Any]]
+    raise HTTPException(HTTP_429_TOO_MANY_REQUESTS, "Too Many Requests", headers={"Retry-After": str(pexpire)})
 
 
 async def ws_default_callback(ws: WebSocket, pexpire: int):
@@ -62,6 +56,7 @@ class FastAPILimiter:
     identifier: IDENTIFIER_SIGNATURE = default_identifier
     http_callback: HTTP_CALLBACK_SIGNATURE = http_default_callback
     ws_callback: WS_CALLBACK_SIGNATURE = ws_default_callback
+    strategy: RateLimitStrategy = RateLimitStrategy.FIXED_WINDOW
 
     @classmethod
     async def init(
@@ -72,6 +67,7 @@ class FastAPILimiter:
         identifier: IDENTIFIER_SIGNATURE | None = None,
         http_callback: HTTP_CALLBACK_SIGNATURE | None = None,
         ws_callback: WS_CALLBACK_SIGNATURE | None = None,
+        strategy: RateLimitStrategy | None = None,
     ) -> None:
         cls.backend = backend
         if prefix:
@@ -82,6 +78,8 @@ class FastAPILimiter:
             cls.http_callback = http_callback
         if ws_callback:
             cls.ws_callback = ws_callback
+        if strategy:
+            cls.strategy = strategy
 
     @classmethod
     async def close(cls) -> None:
