@@ -1,7 +1,4 @@
-from typing import Annotated
-
 from fastapi.routing import APIRoute
-from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket
@@ -19,17 +16,19 @@ class RateLimiter:
     def __init__(
         self,
         *,
-        times: Annotated[int, Field(ge=0)] = 1,
-        milliseconds: Annotated[int, Field(ge=-1)] = 0,
-        seconds: Annotated[int, Field(ge=-1)] = 0,
-        minutes: Annotated[int, Field(ge=-1)] = 0,
-        hours: Annotated[int, Field(ge=-1)] = 0,
+        times: int = 1,
+        milliseconds: int = 0,
+        seconds: int = 0,
+        minutes: int = 0,
+        hours: int = 0,
         identifier: IDENTIFIER_SIGNATURE | None = None,
         callback: HTTP_CALLBACK_SIGNATURE | None = None,
         strategy: RateLimitStrategy = RateLimitStrategy.FIXED_WINDOW,
     ):
         self.times = times
+        assert self.times >= 0, "times must be greater than or equal to 0"
         self.milliseconds = milliseconds + 1000 * seconds + 60000 * minutes + 3600000 * hours
+        assert self.milliseconds >= 0, "time must be greater than or equal to 0"
         self.identifier = identifier
         self.callback = callback
         self.strategy = strategy
@@ -50,6 +49,8 @@ class RateLimiter:
 
     async def __call__(self, request: Request, response: Response):
         assert FastAPILimiter.backend is not None, "You must call FastAPILimiter.init in startup event of fastapi!"
+        if self.milliseconds == 0:
+            return
 
         self._set_indexes(request)
 
@@ -68,23 +69,28 @@ class RateLimiter:
 class WebSocketRateLimiter:
     def __init__(
         self,
-        times: Annotated[int, Field(ge=0)] = 1,
-        milliseconds: Annotated[int, Field(ge=-1)] = 0,
-        seconds: Annotated[int, Field(ge=-1)] = 0,
-        minutes: Annotated[int, Field(ge=-1)] = 0,
-        hours: Annotated[int, Field(ge=-1)] = 0,
+        *,
+        times: int = 1,
+        milliseconds: int = 0,
+        seconds: int = 0,
+        minutes: int = 0,
+        hours: int = 0,
         identifier: IDENTIFIER_SIGNATURE | None = None,
         callback: WS_CALLBACK_SIGNATURE | None = None,
         strategy: RateLimitStrategy = RateLimitStrategy.FIXED_WINDOW,
     ):
         self.times = times
+        assert self.times >= 0, "times must be greater than or equal to 0"
         self.milliseconds = milliseconds + 1000 * seconds + 60000 * minutes + 3600000 * hours
+        assert self.milliseconds >= 0, "time must be greater than or equal to 0"
         self.identifier = identifier
         self.callback = callback
         self.strategy = strategy
 
     async def __call__(self, ws: WebSocket, context_key: str = ""):
         assert FastAPILimiter.backend is not None, "You must call FastAPILimiter.init in startup event of fastapi!"
+        if self.milliseconds == 0:
+            return
         identifier = self.identifier or FastAPILimiter.identifier
         strategy = self.strategy or FastAPILimiter.strategy
         rate_key = await identifier(ws)
