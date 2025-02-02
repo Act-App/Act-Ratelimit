@@ -54,6 +54,7 @@ class RateLimiter:
 
         self.route_index = 0
         self.dep_index = 0
+        self._index_set = False
 
     def _set_indexes(self, request: Request):
         for i, route in enumerate(request.app.routes):
@@ -65,20 +66,20 @@ class RateLimiter:
                     if self is dependency.dependency:  # type: ignore
                         self.dep_index = j
                         break
+        self._index_set = True
 
     async def __call__(self, request: Request, response: Response):
         assert ACTRatelimit.backend is not None, "You must call FastAPILimiter.init in startup event of fastapi!"
         if self.milliseconds == 0:
             return
-
-        self._set_indexes(request)
+        if not self._index_set:
+            self._set_indexes(request)
 
         # moved here because constructor run before app startup
         identifier = self.identifier or ACTRatelimit.identifier
         strategy = self.strategy or ACTRatelimit.strategy
         rate_key = await identifier(request)
         key = f"{ACTRatelimit.prefix}:{rate_key}:{self.route_index}:{self.dep_index}"
-        print(key)
         pexpire = await ACTRatelimit.backend.check(key, self.times, self.milliseconds, strategy)
         if pexpire != 0:
             callback = self.callback or ACTRatelimit.http_callback
