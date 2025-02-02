@@ -35,7 +35,7 @@ dev = ["nox==2024.10.9"]
 "dev.changelog" = ["towncrier==24.8.0"]
 
 [tool.towncrier]
-package = "app"
+package = "act_ratelimit"
 directory = "changes"
 filename = "CHANGELOG.md"
 issue_format = "[#{issue}](https://github.com/the-godz/Service-Bot/issues/{issue})"
@@ -89,7 +89,7 @@ ignore = [
     "F403"
 ]
 [tool.ruff.lint.per-file-ignores]
-    "act-ratelimit/__init__.py" = ["RUF029"]
+    "act_ratelimit/__init__.py" = ["RUF029"]
 
 [tool.ruff.lint.isort]
 force-single-line = true

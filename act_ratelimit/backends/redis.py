@@ -34,7 +34,10 @@ class RedisBackend(BaseBackend):
 
     async def check(self, key: str, times: int, limit: int) -> int:
         if not self.lua_sha:
-            self.lua_sha = await self.redis.script_load(self.LUA_SCRIPT)  # type: ignore
-        assert isinstance(self.lua_sha, str) # type: ignore
-        result: str = await self.redis.evalsha(self.lua_sha, 1, key, str(times), str(limit))  # type: ignore
-        return int(result) # type: ignore
+            self.lua_sha = await self.redis.script_load(self.LUA_SCRIPT)  # pyright: ignore
+        assert isinstance(self.lua_sha, str)  # pyright: ignore
+        result: str = await self.redis.evalsha(self.lua_sha, 1, key, str(times), str(limit))  # pyright: ignore
+        return int(result)  # pyright: ignore
+
+    async def close(self) -> None:
+        await self.redis.aclose()  # pyright: ignore
