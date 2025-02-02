@@ -1,4 +1,9 @@
-from redis import asyncio as aioredis
+from __future__ import annotations
+
+import typing_extensions
+
+if typing_extensions.TYPE_CHECKING:
+    from redis import asyncio as aioredis
 
 from . import BaseBackend
 
