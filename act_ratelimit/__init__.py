@@ -118,4 +118,4 @@ class ACTRatelimit:
         await cls.backend.close()
 
 
-__version__ = "0.0.1a2"
+__version__ = "1.0.0"
