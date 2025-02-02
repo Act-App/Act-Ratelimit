@@ -47,21 +47,21 @@ def nox_session(**kwargs: t.Any) -> Callable[[Callable[[nox.Session], None]], Ca
 
 @nox_session()
 def format_fix(session: nox.Session) -> None:
-    session.install("-U", ".[redis,dev.format]")
+    session.install("-U", ".[valkey,redis,dev.format]")
     session.run("python", "-m", "ruff", "format", *SCRIPT_PATHS)
     session.run("python", "-m", "ruff", "check", "--fix", *SCRIPT_PATHS)
 
 
 @nox_session()
 def format_check(session: nox.Session) -> None:
-    session.install("-U", ".[redis,dev.format]")
+    session.install("-U", ".[valkey,redis,dev.format]")
     session.run("python", "-m", "ruff", "format", *SCRIPT_PATHS, "--check")
     session.run("python", "-m", "ruff", "check", "--output-format", "github", *SCRIPT_PATHS)
 
 
 @nox_session()
 def typecheck(session: nox.Session) -> None:
-    session.install("-U", ".[redis,dev.typecheck]")
+    session.install("-U", ".[valkey,redis,dev.typecheck]")
     session.run("python", "-m", "pyright")
 
 
