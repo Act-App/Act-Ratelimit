@@ -66,7 +66,7 @@ jobs:
 
       - name: Prepare Release Description
         run: |
-          tail -n +3 CHANGES.md > CHANGES.tmp.md
+          tail -n +3 CHANGELOG.md > CHANGELOG.tmp.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -74,5 +74,5 @@ jobs:
           token: "${{ secrets.GITHUB_TOKEN }}"
           name: "v${{ steps.update-version.outputs.VERSION }}"
           tag_name: "refs/tags/${{ steps.update-version.outputs.VERSION }}"
-          body_path: CHANGES.tmp.md
+          body_path: CHANGELOG.tmp.md
           prerelease: ${{ inputs.version_type == 'alpha' }}
